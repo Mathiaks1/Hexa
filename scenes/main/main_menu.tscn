@@ -1,0 +1,52 @@
+[gd_scene load_steps=3 format=3 uid="uid://u76hebeuxmtq"]
+
+[ext_resource type="Script" uid="uid://uqgxlkjvufr5" path="res://scripts/managers/main_menu.gd" id="1_5vafy"]
+[ext_resource type="Texture2D" uid="uid://ds15rdrixdc67" path="res://assets/hexa_resized_1920x1080.png" id="2_byqcc"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 1.0
+offset_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_5vafy")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 0
+offset_left = -1.0
+offset_top = -2.0
+offset_right = 39.0
+offset_bottom = 38.0
+texture = ExtResource("2_byqcc")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -403.0
+offset_top = -215.5
+offset_right = 414.0
+offset_bottom = 117.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Start" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(250, 75)
+layout_mode = 2
+text = "Start"
+
+[node name="Opcje" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(250, 75)
+layout_mode = 2
+text = "Opcje"
+
+[node name="Wyjscie" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(200, 75)
+layout_mode = 2
+text = "Wyjście"
