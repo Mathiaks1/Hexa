@@ -1,11 +1,13 @@
-[gd_scene load_steps=17 format=4 uid="uid://miqi1e0du3md"]
+[gd_scene load_steps=19 format=4 uid="uid://miqi1e0du3md"]
 
 [ext_resource type="Texture2D" uid="uid://pbefeb4g0h12" path="res://assets/art/tiles_hex/Tileset1.png" id="1_sul5r"]
 [ext_resource type="Texture2D" uid="uid://dlmnilxulht1a" path="res://assets/art/tiles_hex/DIM.png" id="2_0sr1o"]
 [ext_resource type="Script" uid="uid://csccmsigoxbtn" path="res://scripts/game/CameraController.gd" id="2_7h61r"]
 [ext_resource type="Texture2D" uid="uid://hh4md05hjmxl" path="res://assets/art/tiles_hex/Cursor1.png" id="4_5i0tg"]
 [ext_resource type="Script" uid="uid://dcsuuhmlsru4w" path="res://scripts/game/FogOfWar.gd" id="4_kelw5"]
+[ext_resource type="Script" uid="uid://doeetxt0fx34s" path="res://scripts/game/Highlights.gd" id="5_87uf6"]
 [ext_resource type="Texture2D" uid="uid://cuphn2js3vnhh" path="res://assets/art/tiles_hex/Cursor2.png" id="5_bdhmt"]
+[ext_resource type="Script" uid="uid://b2dox6cwbp6jo" path="res://scripts/game/HexCursor.gd" id="6_bdhmt"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_7h61r"]
 texture = ExtResource("1_sul5r")
@@ -97,9 +99,11 @@ tile_set = SubResource("TileSet_lfrn8")
 
 [node name="TileMapHighlights" type="TileMapLayer" parent="."]
 tile_set = SubResource("TileSet_2a8rs")
+script = ExtResource("5_87uf6")
 
 [node name="TileMapCursor" type="TileMapLayer" parent="."]
 tile_set = SubResource("TileSet_vaxfo")
+script = ExtResource("6_bdhmt")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 script = ExtResource("2_7h61r")
