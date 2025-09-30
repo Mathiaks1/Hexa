@@ -1,73 +1,102 @@
-# res://scripts/game/FogOfWar.gd
+# res://scripts/game/FogOfWarSimple.gd
 extends Node
-class_name FogOfWar
+class_name FogOfWarSimple
 
-@export var tm_terrain_path: NodePath
-@export var tm_fog_path: NodePath
+@export_node_path var tm_terrain_path: NodePath   # możesz zostawić puste
+@export_node_path var tm_fog_path: NodePath       # możesz zostawić puste
 
-# Źródło tilesetu i indeksy (dostosuj do swojego TileSetu)
-@export var fog_source_id: int = 0      # TileSet source id dla TileMapFog
-@export var tile_black_id: int = 0      # atlas_coords.x kafelka "pełna mgła"
-@export var tile_dim_id: int = 1        # atlas_coords.x kafelka "pół mgły"
-
+@export var fog_source_id: int = 0
+@export var use_atlas: bool = true
+@export var fog_atlas_coords: Vector2i = Vector2i.ZERO
 @export var vision_radius: int = 3
 
 var _tm_terrain: TileMap
 var _tm_fog: TileMap
-var _discovered: Dictionary = {}        # Set: Vector2i -> true
 
 func _ready() -> void:
-	_tm_terrain = get_node(tm_terrain_path) as TileMap
-	_tm_fog = get_node(tm_fog_path) as TileMap
-	_fill_black()
+	if not _resolve_nodes():
+		return
+	fill_all_with_dim()
 
-func _fill_black() -> void:
+func _resolve_nodes() -> bool:
+	# 1) jeśli podane w Inspectorze – użyj ich
+	if tm_terrain_path != NodePath(""):
+		_tm_terrain = get_node_or_null(tm_terrain_path) as TileMap
+	if tm_fog_path != NodePath(""):
+		_tm_fog = get_node_or_null(tm_fog_path) as TileMap
+
+	# 2) fallback: spróbuj znajdować po NAZWIE
+	if _tm_terrain == null:
+		_tm_terrain = find_child("TileMapLayer", true, false) as TileMap
+	if _tm_fog == null:
+		_tm_fog = find_child("TileMapFog", true, false) as TileMap
+
+	# 3) fallback: pierwszy TileMap jako teren, drugi jako mgła
+	if _tm_terrain == null or _tm_fog == null:
+		var tms: Array = []
+		for c in get_children():
+			if c is TileMap:
+				tms.append(c)
+		if tms.size() >= 2:
+			if _tm_terrain == null: _tm_terrain = tms[0]
+			if _tm_fog == null:     _tm_fog     = tms[1]
+
+	# 4) ostatecznie: błąd i pokaż drzewo
+	if _tm_terrain == null:
+		push_error("FogOfWarSimple: nie znaleziono TileMap TERENU. Ustaw 'tm_terrain_path' lub nazwij node 'TileMapLayer'.")
+		print_tree_pretty()
+		return false
+	if _tm_fog == null:
+		push_error("FogOfWarSimple: nie znaleziono TileMap MGŁY. Ustaw 'tm_fog_path' lub nazwij node 'TileMapFog'.")
+		print_tree_pretty()
+		return false
+	return true
+
+func fill_all_with_dim() -> void:
+	if _tm_terrain == null or _tm_fog == null:
+		if not _resolve_nodes(): return
 	var r: Rect2i = _tm_terrain.get_used_rect()
 	for y in range(r.position.y, r.position.y + r.size.y):
 		for x in range(r.position.x, r.position.x + r.size.x):
-			var c: Vector2i = Vector2i(x, y)
-			_tm_fog.set_cell(0, c, fog_source_id, Vector2i(tile_black_id, 0)) # warstwa 0
+			_set_fog(Vector2i(x, y))
 
 func rebuild_fog(units_cells: Array[Vector2i]) -> void:
-	# 1) Zbierz widoczne komórki
-	var visible: Dictionary = {}  # Set<Vector2i>
+	if _tm_terrain == null or _tm_fog == null:
+		if not _resolve_nodes(): return
+
+	var visible: Dictionary = {}
 	for cell in units_cells:
 		_bfs_mark_visible(cell, vision_radius, visible)
 
-	# 2) Zapisz „odkryte”
-	for c in visible.keys():
-		_discovered[c] = true
-
-	# 3) Narysuj mgłę
 	var r: Rect2i = _tm_terrain.get_used_rect()
 	for y in range(r.position.y, r.position.y + r.size.y):
 		for x in range(r.position.x, r.position.x + r.size.x):
-			var c: Vector2i = Vector2i(x, y)
+			var c := Vector2i(x, y)
 			if visible.has(c):
-				_tm_fog.erase_cell(0, c)  # brak mgły
-			elif _discovered.has(c):
-				_tm_fog.set_cell(0, c, fog_source_id, Vector2i(tile_dim_id, 0))
+				_tm_fog.erase_cell(0, c)
 			else:
-				_tm_fog.set_cell(0, c, fog_source_id, Vector2i(tile_black_id, 0))
+				_set_fog(c)
+
+func _set_fog(c: Vector2i) -> void:
+	if use_atlas:
+		_tm_fog.set_cell(0, c, fog_source_id, fog_atlas_coords)
+	else:
+		_tm_fog.set_cell(0, c, fog_source_id)
 
 func _bfs_mark_visible(start: Vector2i, radius: int, visible: Dictionary) -> void:
-	var q: Array[Vector2i] = []
-	var dist: Dictionary = {} # Vector2i -> int
-	q.append(start)
-	dist[start] = 0
+	var q: Array[Vector2i] = [start]
+	var dist: Dictionary = { start: 0 }
 	visible[start] = true
 
 	while q.size() > 0:
 		var cur: Vector2i = q.pop_front()
-		var d: int = int(dist[cur])
+		var d := int(dist[cur])
 		if d >= radius:
 			continue
-
-		var neighs: PackedVector2Array = _tm_terrain.get_surrounding_cells(cur)
+		var neighs := _tm_terrain.get_surrounding_cells(cur)
 		for n in neighs:
 			var nvi := Vector2i(int(n.x), int(n.y))
 			if not dist.has(nvi):
-				# (tu możesz dodać is_blocker(nvi) i przerwać promień)
 				dist[nvi] = d + 1
 				visible[nvi] = true
 				q.append(nvi)
